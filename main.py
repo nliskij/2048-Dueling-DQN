@@ -119,15 +119,15 @@ def network():
     dense3 = tf.layers.dense(inputs=dense2, units=256, activation=tf.nn.relu)
     # dense3 = tf.layers.dropout(inputs=dense3, rate=0.5, training=True)
 
-    denseA = tf.layers.dense(inputs=dense3, units=256, activation=tf.nn.relu)
-    # denseV = tf.layers.dropout(inputs=denseV, rate=0.5, training=True)
-    denseA2 = tf.layers.dense(inputs=denseV, units=4, activation=tf.nn.relu)
-
     denseV = tf.layers.dense(inputs=dense3, units=256, activation=tf.nn.relu)
-    # denseA = tf.layers.dropout(inputs=denseA, rate=0.5, training=True)
-    denseV2 = tf.layers.dense(inputs=denseA, units=1, activation=tf.nn.relu)
+    # denseV = tf.layers.dropout(inputs=denseV, rate=0.5, training=True)
+    denseV2 = tf.layers.dense(inputs=denseV, units=4, activation=tf.nn.relu)
 
-    mergelayer = tf.concat([denseA2,denseV2], -1)
+    denseA = tf.layers.dense(inputs=dense3, units=256, activation=tf.nn.relu)
+    # denseA = tf.layers.dropout(inputs=denseA, rate=0.5, training=True)
+    denseA2 = tf.layers.dense(inputs=denseA, units=1, activation=tf.nn.relu)
+
+    mergelayer = tf.concat([denseV2,denseA2], -1)
     
     logits = tf.layers.dense(inputs=mergelayer, units=4)
 
