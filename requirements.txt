@@ -1,0 +1,4 @@
+selenium==2.52.0
+numpy
+pillow
+tensorflow

@@ -1,0 +1,4 @@
+*.csv
+abcd*
+ql3/
+__pycache__/

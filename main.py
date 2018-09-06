@@ -6,6 +6,7 @@ import random
 import tensorflow as tf
 import time
 import re
+import csv
 
 from game import Game
 from PIL import Image
@@ -15,21 +16,26 @@ from selenium.common.exceptions import StaleElementReferenceException
 from util import TILES, flatten, normalize, normalize_num, get_reward
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-t', '--train', help='specify web or local training (default web)')
+parser.add_argument('-t', '--train', help='specify if training is enabled', action='store_true')
+parser.add_argument('-l', '--log', help='specify if extra logging is enabled', action='store_true')
+parser.add_argument('-e', '--env', help='specify web or local env')
 args = parser.parse_args()
 
-CHROMEDRIVER_DIR = 'C:/Users/ZeroB/Desktop/2048-ql-master-test-3/chromedriver.exe'
+CHROMEDRIVER_DIR = "ql3/bin/chromedriver"
 MODEL_PATH = os.getcwd() + "/abcd.ckpt"
 EXPERIENCES_PATH = os.getcwd() + "/abcd.p"
 LOCAL = 'local'
 WEB = 'web'
 
 driver = None
-env = LOCAL if args.train == LOCAL else WEB
+env = args.env
+mode = {'train': False, 'log': False}
+mode['train'] = args.train
+mode['log'] = args.log
+
 if env == WEB:
     driver = webdriver.Chrome(CHROMEDRIVER_DIR)
 
-print('modified')
 # retry_button_class = 'retry-button'
 # keep_going_button_class = 'keep-playing-button'
 
@@ -142,7 +148,7 @@ def init():
         data = myfile.read().replace('\n', '')
     driver.execute_script(data)
 
-def train(inpt, out, env, sess):
+def train(inpt, out, env, sess, mode):
     # Training parameters
     batch_size = 256
     discount = 0.9
@@ -178,6 +184,7 @@ def train(inpt, out, env, sess):
         data = pickle.load(open(EXPERIENCES_PATH, 'rb'))
         experiences = data['experiences']
         epochs_trained = data['epochs_trained']
+        time.sleep(10)
         avg_scores = data['avg_scores']
         max_exps = len(experiences)
     else:
@@ -203,6 +210,9 @@ def train(inpt, out, env, sess):
     avg_score = 0
     game_step = 0 
     games_played = 0
+    if mode['log']:
+        csvfile = open("log.csv", "w")
+        log_file = csv.writer(csvfile)
     for c in range (start, epochs):
         if env == WEB:
             game = driver.find_element_by_tag_name("body")
@@ -220,7 +230,9 @@ def train(inpt, out, env, sess):
             random.shuffle(action_indices)
         else:
             values = out.eval(feed_dict=feed_dict, session=sess)
-            action_indices = [i[0] for i in sorted(enumerate(values[0]), key=lambda x:x[1], reverse=True)]
+            if env == WEB:
+                print(values)
+            action_indices = sorted([0, 1, 2, 3], key=lambda i: values[0][i], reverse=True)
 
         action, new_board = move(env, game, action_indices, board)
         game_step += 1
@@ -229,7 +241,12 @@ def train(inpt, out, env, sess):
         if action == -1:
             step_counter += game_step
             games_played += 1
-            game_step = 0
+            if env != WEB:
+                max_tile = max(x for row in game.grid for x in row)
+            if max_tile >= 2048:
+                print(game.grid)
+            if mode['log']:
+                log_file.writerow([score, max_tile, game_step])
             if prev_inpt_board is not None:
                 one_hot_reward = np.zeros((4))
                 one_hot_reward[prev_action] = -1
@@ -248,10 +265,10 @@ def train(inpt, out, env, sess):
                 game.add_random_tile()
             else:
                 driver.find_element_by_class_name("restart-button").click()
-                time.sleep(0.5)
+                #time.sleep(0.5)
             
             #print "Final Score: %d" % score
-
+            game_step = 0
             if len(experiences) == max_exps:
                 tot_score_counter += score
                 if score >= 12000:
@@ -322,7 +339,7 @@ def train(inpt, out, env, sess):
         inpt_board = next_inpt_board
         
         # Train the model using experience replay
-        if c > 0 and c % batch_size == 0 and len(experiences) == max_exps:
+        if c > 0 and c % batch_size == 0 and len(experiences) == max_exps and mode['train']:
             sample = random.sample(experiences, batch_size)
             next_state = np.array([x[2] for x in sample])
             rewards = np.array([x[1] for x in sample])
@@ -385,7 +402,7 @@ if env == WEB:
     time.sleep(0.5) # allow game to load
 
 inpt, out = network()
-train(inpt, out, env, sess)
+train(inpt, out, env, sess, mode)
 
 if env == WEB:
     driver.quit()

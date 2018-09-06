@@ -1,2 +1,2 @@
-model_checkpoint_path: "C:\\Users\\ZeroB\\Desktop\\New folder/abcd.ckpt"
-all_model_checkpoint_paths: "C:\\Users\\ZeroB\\Desktop\\New folder/abcd.ckpt"
+model_checkpoint_path: "/home/nicholas/Projects/2048-Dueling-DQN/abcd.ckpt"
+all_model_checkpoint_paths: "/home/nicholas/Projects/2048-Dueling-DQN/abcd.ckpt"
