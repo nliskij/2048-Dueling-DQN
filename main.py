@@ -153,7 +153,7 @@ def train(inpt, out, env, sess, mode):
     batch_size = 256
     discount = 0.9
     epochs = 500000000
-    epsilon = 1
+    epsilon = 0
     learning_rate = 1e-5
     start = 0
     num_explore = 100000
@@ -225,7 +225,7 @@ def train(inpt, out, env, sess, mode):
         #epsilon = max(0 - float(games_played) / num_explore, 0.00)
         rand = random.random()
         #shift = 0  if game_step < 250 else 0.0 / np.log(np.log(games_played))
-        if rand < 0:
+        if rand < epsilon:
             action_indices = [0,1,2,3]
             random.shuffle(action_indices)
         else:
